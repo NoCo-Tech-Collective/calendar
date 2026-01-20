@@ -152,6 +152,42 @@ main {
   margin: 0 auto;
 }
 
+/* View toggle buttons */
+#view-toggle,
+#view-toggle-list {
+  position: relative;
+  font: inherit;
+  font-weight: bold;
+  background: transparent;
+  color: var(--accent);
+  padding: 5px 18px;
+  border: 4px solid var(--accent);
+  border-radius: var(--radius);
+  transition: background 0.15s linear;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+#view-toggle:hover,
+#view-toggle-list:hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+#view-toggle:focus-visible,
+#view-toggle-list:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hidden {
+  display: none !important;
+}
+
 /* Calendar wrapper */
 .calendar-wrapper {
   max-width: 1000px;
@@ -165,6 +201,7 @@ main {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 15px;
 }
 
 .calendar-controls button {
@@ -319,6 +356,84 @@ main {
 
 #close-details:hover {
   opacity: 0.7;
+}
+
+/* List view */
+.list-view-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.list-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.list-view-wrapper h2 {
+  font-size: calc(var(--font-size) * 1.35);
+  margin: 0;
+  color: var(--accent);
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.event-list-item {
+  border: 2px solid var(--foreground);
+  padding: 20px;
+  background: var(--background);
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.event-list-item:hover {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.event-list-item.cancelled {
+  opacity: 0.6;
+}
+
+.event-date {
+  font-size: 0.85em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.event-title {
+  font-size: calc(var(--font-size) * 1.1);
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--foreground);
+}
+
+.event-description {
+  line-height: 1.6;
+  margin-bottom: 8px;
+  color: var(--foreground);
+}
+
+.event-meta {
+  font-size: 0.9em;
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.event-meta span {
+  display: inline-block;
 }
 
 /* Content wrapper for about page */

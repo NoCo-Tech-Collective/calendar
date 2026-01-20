@@ -7,6 +7,24 @@
 
   let currentDate = new Date();
   let eventsData = null;
+  let currentView = 'calendar'; // 'calendar' or 'list'
+
+  // Get query parameter from URL
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  // Update query parameter in URL without reloading
+  function updateQueryParam(param, value) {
+    const url = new URL(window.location);
+    if (value) {
+      url.searchParams.set(param, value);
+    } else {
+      url.searchParams.delete(param);
+    }
+    window.history.pushState({}, '', url);
+  }
 
   // Load events from JSON file
   async function loadEvents() {
@@ -14,6 +32,7 @@
       const response = await fetch('events.json');
       eventsData = await response.json();
       renderCalendar();
+      renderEventList();
     } catch (error) {
       console.error('Failed to load events:', error);
       document.getElementById('current-month').textContent = 'Error loading events';
@@ -331,11 +350,122 @@
     renderCalendar();
   }
 
+  // Render upcoming events list
+  function renderEventList() {
+    const eventList = document.getElementById('event-list');
+    if (!eventList) return;
+
+    eventList.innerHTML = '';
+
+    // Get today's date and 12 months from now
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(today);
+    endDate.setFullYear(endDate.getFullYear() + 1); // 12 months from now
+
+    // Collect all events with their dates
+    const upcomingEvents = [];
+    const currentDate = new Date(today);
+
+    // Collect all events in the next 12 months
+    while (currentDate <= endDate) {
+      const events = getEventsForDate(currentDate);
+      events.forEach(event => {
+        const override = getOverride(event.id, formatDate(currentDate));
+        // Skip cancelled events
+        if (override && override.cancelled) return;
+
+        upcomingEvents.push({
+          event: event,
+          date: new Date(currentDate),
+          override: override
+        });
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Sort by date
+    upcomingEvents.sort((a, b) => a.date - b.date);
+
+    // Render events
+    if (upcomingEvents.length === 0) {
+      eventList.innerHTML = '<p style="padding: 20px; text-align: center;">No upcoming events found in the next 12 months.</p>';
+      return;
+    }
+
+    upcomingEvents.forEach(({ event, date, override }) => {
+      const eventItem = document.createElement('div');
+      eventItem.className = 'event-list-item';
+      if (override && override.cancelled) {
+        eventItem.classList.add('cancelled');
+      }
+
+      // Format date
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+      const dateStr = `${dayNames[date.getDay()]}, ${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+
+      // Format time
+      let timeStr = '';
+      if (event.type === 'recurring') {
+        timeStr = `${event.recurrence.startTime} - ${event.recurrence.endTime}`;
+      } else if (event.type === 'static') {
+        timeStr = `${event.startTime} - ${event.endTime}`;
+      }
+
+      eventItem.innerHTML = `
+        <div class="event-date">${dateStr}</div>
+        <div class="event-title">${event.title}</div>
+        <div class="event-description">${event.description || 'No description available'}</div>
+        <div class="event-meta">
+          <span>⏰ ${timeStr}</span>
+          <span>📍 ${event.location || 'TBD'}</span>
+        </div>
+      `;
+
+      eventItem.addEventListener('click', () => {
+        showEventDetails(event, date, override);
+      });
+
+      eventList.appendChild(eventItem);
+    });
+  }
+
+  // Set the view (calendar or list)
+  function setView(view) {
+    const calendarView = document.getElementById('calendar-view');
+    const listView = document.getElementById('list-view');
+
+    currentView = view;
+
+    if (view === 'list') {
+      calendarView.classList.add('hidden');
+      listView.classList.remove('hidden');
+      updateQueryParam('view', 'list');
+    } else {
+      calendarView.classList.remove('hidden');
+      listView.classList.add('hidden');
+      updateQueryParam('view', 'calendar');
+    }
+  }
+
+  // Toggle between calendar and list view
+  function toggleView() {
+    if (currentView === 'calendar') {
+      setView('list');
+    } else {
+      setView('calendar');
+    }
+  }
+
   // Initialize calendar
   function init() {
     document.getElementById('prev-month').addEventListener('click', prevMonth);
     document.getElementById('next-month').addEventListener('click', nextMonth);
     document.getElementById('close-details').addEventListener('click', closeEventDetails);
+    document.getElementById('view-toggle').addEventListener('click', toggleView);
+    document.getElementById('view-toggle-list').addEventListener('click', toggleView);
 
     // Close modal when clicking outside
     document.getElementById('event-details').addEventListener('click', (e) => {
@@ -354,6 +484,14 @@
         nextMonth();
       }
     });
+
+    // Check for view query parameter
+    const viewParam = getQueryParam('view');
+    if (viewParam === 'list') {
+      setView('list');
+    } else {
+      setView('calendar');
+    }
 
     loadEvents();
   }
