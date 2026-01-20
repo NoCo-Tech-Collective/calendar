@@ -10,7 +10,7 @@ To contribute events or improvements:
 2. Make your changes
 3. Submit a pull request
 
-For event submissions, please follow the JSON format examples above and ensure all required fields are included.
+For event submissions, please follow the JSON format examples below and ensure all required fields are included.
 
 ## Support
 
