@@ -3,7 +3,7 @@
     {
       "id": "noco-hackers-monthly",
       "title": "NoCo Hackers",
-      "description": "NoCo Hackers is a community of cybersecurity professionals, enthusiasts, and playful computing practitioners based in Northern Colorado. Our mission is to share knowledge, foster collaboration, and create a supportive environment for all skill levels to learn and grow in the ever-evolving world of cybersecurity.",
+      "description": "NoCo Hackers is a community of cybersecurity professionals, enthusiasts, and playful computing practitioners based in Northern Colorado. Our mission is to share knowledge, foster collaboration and create a supportive environment for all skill levels to learn and grow in the ever-evolving world of cybersecurity.",
       "type": "recurring",
       "recurrence": {
         "frequency": "monthly",
