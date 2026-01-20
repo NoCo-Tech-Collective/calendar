@@ -468,6 +468,39 @@ main {
   outline-offset: 2px;
 }
 
+/* Add to Calendar buttons */
+.add-to-calendar-btn,
+.add-to-calendar-btn-inline {
+  position: relative;
+  font: inherit;
+  font-weight: bold;
+  background: var(--accent);
+  color: var(--background);
+  padding: 8px 20px;
+  border: 4px solid var(--accent);
+  border-radius: var(--radius);
+  transition: background 0.15s linear, color 0.15s linear;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.add-to-calendar-btn:hover,
+.add-to-calendar-btn-inline:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+.add-to-calendar-btn:focus-visible,
+.add-to-calendar-btn-inline:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Content wrapper for about page */
 .content-wrapper {
   max-width: 800px;

@@ -308,6 +308,7 @@
     const time = document.getElementById('detail-time');
     const location = document.getElementById('detail-location');
     const website = document.getElementById('detail-website');
+    const addToCalendarBtn = document.getElementById('add-to-calendar');
 
     title.textContent = event.title;
     description.textContent = event.description || 'No description available';
@@ -339,12 +340,97 @@
       description.innerHTML = `<strong>CANCELLED</strong><br>${override.reason || 'This event has been cancelled'}`;
     }
 
+    // Setup Add to Calendar button
+    addToCalendarBtn.onclick = (e) => {
+      e.stopPropagation();
+      downloadICS(event, date);
+    };
+
     modal.classList.remove('hidden');
   }
 
   // Close event details modal
   function closeEventDetails() {
     document.getElementById('event-details').classList.add('hidden');
+  }
+
+  // Generate iCalendar (.ics) file for an event
+  function generateICS(event, date) {
+    // Format date as YYYYMMDD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    // Get start and end times
+    let startTime = '';
+    let endTime = '';
+    if (event.type === 'recurring') {
+      startTime = event.recurrence.startTime.replace(':', '') + '00';
+      endTime = event.recurrence.endTime.replace(':', '') + '00';
+    } else if (event.type === 'static') {
+      startTime = event.startTime.replace(':', '') + '00';
+      endTime = event.endTime.replace(':', '') + '00';
+    }
+
+    // Create timestamp for when the event was created
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    // Build iCalendar content with timezone information
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//NoCo Tech Coalition//Calendar//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VTIMEZONE',
+      'TZID:America/Denver',
+      'BEGIN:DAYLIGHT',
+      'TZOFFSETFROM:-0700',
+      'TZOFFSETTO:-0600',
+      'TZNAME:MDT',
+      'DTSTART:19700308T020000',
+      'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
+      'END:DAYLIGHT',
+      'BEGIN:STANDARD',
+      'TZOFFSETFROM:-0600',
+      'TZOFFSETTO:-0700',
+      'TZNAME:MST',
+      'DTSTART:19701101T020000',
+      'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
+      'END:STANDARD',
+      'END:VTIMEZONE',
+      'BEGIN:VEVENT',
+      `UID:${event.id}-${dateStr}@nocotechcoalition.org`,
+      `DTSTAMP:${timestamp}`,
+      `DTSTART;TZID=America/Denver:${dateStr}T${startTime}`,
+      `DTEND;TZID=America/Denver:${dateStr}T${endTime}`,
+      `SUMMARY:${event.title}`,
+      `DESCRIPTION:${(event.description || '').replace(/\n/g, '\\n')}`,
+      `LOCATION:${event.location || ''}`,
+      event.website ? `URL:${event.website}` : '',
+      'STATUS:CONFIRMED',
+      'SEQUENCE:0',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].filter(line => line).join('\r\n');
+
+    return icsContent;
+  }
+
+  // Download .ics file
+  function downloadICS(event, date) {
+    const icsContent = generateICS(event, date);
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${event.id}-${formatDate(date)}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   // Navigate to previous month
@@ -437,7 +523,17 @@
           <span>📍 ${event.location || 'TBD'}</span>
           ${websiteHtml}
         </div>
+        <button class="add-to-calendar-btn-inline" data-event-index="${upcomingEvents.indexOf({ event, date, override })}">
+          📅 Add to Calendar
+        </button>
       `;
+
+      // Add click handler to the button
+      const calendarBtn = eventItem.querySelector('.add-to-calendar-btn-inline');
+      calendarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        downloadICS(event, date);
+      });
 
       eventItem.addEventListener('click', () => {
         showEventDetails(event, date, override);
