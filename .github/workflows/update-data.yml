@@ -8,9 +8,6 @@ on:
 permissions:
   contents: write
 
-env:
-  GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
-
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -24,6 +21,8 @@ jobs:
           go-version: '1.21'
       
       - name: Build and run
+        env:
+          GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
         run: |
           cd ./sync
           go build -o sync ./main.go
