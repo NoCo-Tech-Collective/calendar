@@ -78,7 +78,7 @@ The calendar displays events within a **24-month window**: 12 months in the past
 
 ## Adding a New Community Group
 
-To add a new tech community group to the calendar:
+To add a new tech community group to the calendar using `events.json` (as opposed to via a public google calendar):
 
 1. **Add events to `events.json`** - Include all event details following the format examples below
 2. **Update `about.html`** - Add your group to the "Community Groups" section with:
@@ -92,6 +92,97 @@ Example addition to `about.html`:
   <strong><a href="https://example.com">Your Group Name</a></strong> -
   Brief description of your group. Meets [frequency] to [purpose].
 </li>
+```
+
+## Google Calendar Integration
+
+The calendar can automatically sync events from public Google Calendars. This is useful for pulling in events from existing community calendars without manual data entry.
+
+### Setup
+
+1. **Get a Google Calendar API Key**
+   - Go to the [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the Google Calendar API
+   - Create credentials (API Key)
+   - Set the environment variable: `export GOOGLE_CALENDAR_API_KEY=your-api-key-here`
+
+2. **Make your Google Calendar public** (or get access to a public calendar ID)
+
+3. **Add calendar sources** to `calendar-sources.json` (alternatively email brandon@cyb3r.sh for help):
+
+```json
+{
+  "sources": [
+    {
+      "name": "my-group",
+      "contactEmail": "organizer@example.com",
+      "calendarId": "your-calendar-id@group.calendar.google.com",
+      "color": "#df7020",
+      "website": "https://example.com",
+      "eventFilter": {
+        "includeKeywords": [],
+        "excludeKeywords": ["cancelled", "canceled"]
+      }
+    }
+  ]
+}
+```
+
+**Configuration Fields:**
+- **name**: Unique identifier for this calendar source (lowercase, hyphens allowed)
+- **contactEmail**: Email of the calendar maintainer
+- **calendarId**: Google Calendar ID (found in calendar settings)
+- **color**: Color code for events from this calendar (hex format)
+- **website**: (Optional) Organization website to use for all events. If empty, individual event links to Google Calendar will be used
+- **visible**: (Optional) Set to `false` to hide events by default. Hidden events can be viewed with `?showHidden=true` query parameter. Defaults to `true` if not specified. Useful for testing events before making them public.
+- **eventFilter**: Keywords to include or exclude events
+
+### Sync Method
+
+Events from public google calendars are synced every 5 minutes and then added to a materilized JSON file that is used to build the calendar on the client side. This means if you modify your google calendar, it should take at most 5 minutes to sync to nocotech.org. If it takes longer than this, open a github issue or email `brandon@cyb3r.sh`
+
+#### Manual Sync (For developers)
+
+**Run the sync binary** to fetch events and create `events-materialized.json`:
+
+```bash
+# Set your API key
+export GOOGLE_CALENDAR_API_KEY=your-api-key-here
+
+# Run the sync
+cd sync
+go run main.go
+```
+
+The sync tool will:
+- Fetch events from all configured Google Calendars (within the 24-month window)
+- Filter events based on your criteria
+- Combine them with manual events from `events.json`
+- Generate `events-materialized.json`
+
+The calendar automatically uses `events-materialized.json` if it exists, otherwise falls back to `events.json`.
+
+### Event Filtering
+
+- **includeKeywords**: Only include events containing these keywords (case-insensitive)
+- **excludeKeywords**: Exclude events containing these keywords (case-insensitive)
+- If `includeKeywords` is empty, all events are included (unless excluded)
+
+### Finding Your Calendar ID
+
+1. Go to your Google Calendar settings
+2. Select the calendar you want to share
+3. Scroll to "Integrate calendar"
+4. Copy the "Calendar ID" (usually ends with `@group.calendar.google.com`)
+
+### Automation
+
+Consider setting up a cron job or GitHub Action to run the sync periodically:
+
+```bash
+# Run sync every day at 2am
+0 2 * * * cd /path/to/calendar/sync && go run main.go
 ```
 
 ## Event Configuration

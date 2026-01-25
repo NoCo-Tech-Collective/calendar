@@ -8,6 +8,8 @@
   let currentDate = new Date();
   let eventsData = null;
   let currentView = 'calendar'; // 'calendar' or 'list'
+  let showPastEvents = false; // Whether to show past events in list view
+  let showHidden = false; // Whether to show hidden events (from ?showHidden=true query param)
 
   // Calculate min and max allowed dates (12 months in each direction, rounded to full months)
   function getMinAllowedDate() {
@@ -51,7 +53,14 @@
   // Load events from JSON file
   async function loadEvents() {
     try {
-      const response = await fetch('events.json');
+      // Try to load events-materialized.json first (includes Google Calendar events)
+      let response = await fetch('events-materialized.json');
+
+      // If materialized file doesn't exist, fall back to events.json
+      if (!response.ok) {
+        response = await fetch('events.json');
+      }
+
       eventsData = await response.json();
       renderCalendar();
       renderEventList();
@@ -136,12 +145,21 @@
   // Check if a date matches a recurring event
   function isRecurringEventOnDate(event, date) {
     const dateStr = formatDate(date);
-    const eventStartDate = new Date(event.recurrence.startDate);
-    const eventEndDate = event.recurrence.endDate ? new Date(event.recurrence.endDate) : null;
+
+    // Normalize dates for comparison (remove time component)
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const startParts = event.recurrence.startDate.split('-');
+    const eventStartDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]));
+
+    let eventEndDate = null;
+    if (event.recurrence.endDate) {
+      const endParts = event.recurrence.endDate.split('-');
+      eventEndDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]));
+    }
 
     // Check if date is within the event's date range
-    if (date < eventStartDate) return false;
-    if (eventEndDate && date > eventEndDate) return false;
+    if (checkDate < eventStartDate) return false;
+    if (eventEndDate && checkDate > eventEndDate) return false;
 
     // Check frequency
     if (event.recurrence.frequency === 'weekly') {
@@ -217,13 +235,33 @@
           }
         }
       } else if (event.type === 'static') {
-        const startDate = new Date(event.startDate);
-        const endDate = new Date(event.endDate);
-        shouldInclude = date >= startDate && date <= endDate;
+        // Normalize dates for comparison
+        const startParts = event.startDate.split('-');
+        const startDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]));
+        const endParts = event.endDate.split('-');
+        const endDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]));
+        const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+        // Check if this is a full-day event (starts and ends at 00:00)
+        const isFullDayEvent = event.startTime === '00:00' && event.endTime === '00:00';
+
+        // For full-day events, exclude the end date (show only on start date)
+        // For timed events, include both start and end dates
+        if (isFullDayEvent) {
+          shouldInclude = checkDate >= startDate && checkDate < endDate;
+        } else {
+          shouldInclude = checkDate >= startDate && checkDate <= endDate;
+        }
       }
 
+      // Check visibility (default to true for backward compatibility)
+      const isVisible = event.visible !== false;
+
       if (shouldInclude) {
-        events.push(eventData);
+        // Only include event if it's visible OR if showHidden is enabled
+        if (isVisible || showHidden) {
+          events.push(eventData);
+        }
       }
     });
 
@@ -352,8 +390,8 @@
 
     location.textContent = `Location: ${event.location || 'TBD'}`;
 
-    // Show website if available
-    if (event.website) {
+    // Show website if available and not empty
+    if (event.website && event.website.trim() !== '') {
       website.innerHTML = `Website: <a href="${event.website}" target="_blank" rel="noopener noreferrer">${event.website}</a>`;
       website.style.display = 'block';
     } else {
@@ -365,11 +403,22 @@
       description.innerHTML = `<strong>CANCELLED</strong><br>${override.reason || 'This event has been cancelled'}`;
     }
 
-    // Setup Add to Calendar button
-    addToCalendarBtn.onclick = (e) => {
-      e.stopPropagation();
-      downloadICS(event, date);
-    };
+    // Setup calendar button
+    if (event.gcalLink) {
+      // For Google Calendar events, link to GCal instead of generating ICS
+      addToCalendarBtn.textContent = '📅 View in Google Calendar';
+      addToCalendarBtn.onclick = (e) => {
+        e.stopPropagation();
+        window.open(event.gcalLink, '_blank', 'noopener,noreferrer');
+      };
+    } else {
+      // For manual events, download ICS file
+      addToCalendarBtn.textContent = '📅 Add to Calendar';
+      addToCalendarBtn.onclick = (e) => {
+        e.stopPropagation();
+        downloadICS(event, date);
+      };
+    }
 
     modal.classList.remove('hidden');
   }
@@ -538,11 +587,18 @@
         // Skip cancelled events
         if (override && override.cancelled) return;
 
-        upcomingEvents.push({
-          event: event,
-          date: new Date(currentDate),
-          override: override
-        });
+        // Check if we already have this event (to avoid duplicates from multi-day events)
+        const alreadyAdded = upcomingEvents.find(
+          item => item.event.id === event.id && formatDate(item.date) === formatDate(currentDate)
+        );
+
+        if (!alreadyAdded) {
+          upcomingEvents.push({
+            event: event,
+            date: new Date(currentDate),
+            override: override
+          });
+        }
       });
       currentDate.setDate(currentDate.getDate() + 1);
     }
@@ -550,13 +606,47 @@
     // Sort by date
     upcomingEvents.sort((a, b) => a.date - b.date);
 
+    // Split events into past and future
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const pastEvents = upcomingEvents.filter(({ date }) => date < today);
+    const futureEvents = upcomingEvents.filter(({ date }) => date >= today);
+
+    // Determine which events to show
+    const eventsToShow = showPastEvents ? upcomingEvents : futureEvents;
+
     // Render events
-    if (upcomingEvents.length === 0) {
-      eventList.innerHTML = '<p style="padding: 20px; text-align: center;">No events found in the viewable date range (past 12 months to future 12 months).</p>';
+    if (eventsToShow.length === 0) {
+      eventList.innerHTML = '<p style="padding: 20px; text-align: center;">No upcoming events found.</p>';
       return;
     }
 
-    upcomingEvents.forEach(({ event, date, override }) => {
+    // Add "Show Past Events" button if there are past events and they're not shown
+    if (pastEvents.length > 0 && !showPastEvents) {
+      const showPastBtn = document.createElement('button');
+      showPastBtn.className = 'show-past-events-btn';
+      showPastBtn.textContent = `📅 Show ${pastEvents.length} Past Event${pastEvents.length !== 1 ? 's' : ''}`;
+      showPastBtn.addEventListener('click', () => {
+        showPastEvents = true;
+        renderEventList();
+      });
+      eventList.appendChild(showPastBtn);
+    }
+
+    // Add "Hide Past Events" button if past events are shown
+    if (showPastEvents && pastEvents.length > 0) {
+      const hidePastBtn = document.createElement('button');
+      hidePastBtn.className = 'show-past-events-btn';
+      hidePastBtn.textContent = '📅 Hide Past Events';
+      hidePastBtn.addEventListener('click', () => {
+        showPastEvents = false;
+        renderEventList();
+      });
+      eventList.appendChild(hidePastBtn);
+    }
+
+    eventsToShow.forEach(({ event, date, override }) => {
       const eventItem = document.createElement('div');
       eventItem.className = 'event-list-item';
       if (override && override.cancelled) {
@@ -577,10 +667,13 @@
         timeStr = `${event.startTime} - ${event.endTime}`;
       }
 
-      // Build website link if available
-      const websiteHtml = event.website
+      // Build website link if available and not empty
+      const websiteHtml = (event.website && event.website.trim() !== '')
         ? `<span>🔗 <a href="${event.website}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Website</a></span>`
         : '';
+
+      // Determine button text based on event source
+      const buttonText = event.gcalLink ? '📅 View in Google Calendar' : '📅 Add to Calendar';
 
       eventItem.innerHTML = `
         <div class="event-date">${dateStr}</div>
@@ -592,7 +685,7 @@
           ${websiteHtml}
         </div>
         <button class="add-to-calendar-btn-inline" data-event-index="${upcomingEvents.indexOf({ event, date, override })}">
-          📅 Add to Calendar
+          ${buttonText}
         </button>
       `;
 
@@ -600,7 +693,11 @@
       const calendarBtn = eventItem.querySelector('.add-to-calendar-btn-inline');
       calendarBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        downloadICS(event, date);
+        if (event.gcalLink) {
+          window.open(event.gcalLink, '_blank', 'noopener,noreferrer');
+        } else {
+          downloadICS(event, date);
+        }
       });
 
       eventItem.addEventListener('click', () => {
@@ -670,6 +767,12 @@
       setView('list');
     } else {
       setView('calendar');
+    }
+
+    // Check for showHidden query parameter
+    const showHiddenParam = getQueryParam('showHidden');
+    if (showHiddenParam === 'true') {
+      showHidden = true;
     }
 
     loadEvents();

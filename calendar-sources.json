@@ -1,0 +1,27 @@
+{
+  "sources": [
+    {
+      "name": "NoCo Hackers Test",
+      "contactEmail": "brandon@cyb3r.sh",
+      "calendarId": "a1028728c249007174b3dd264228f60f27d2cf0c833d42ac15585d94bafa41a5@group.calendar.google.com",
+      "color": "#3498db",
+      "website": "https://nocohackers.com",
+      "visible": false,
+      "eventFilter": {
+        "includeKeywords": [],
+        "excludeKeywords": ["cancelled", "canceled"]
+      }
+    },
+    {
+      "name": "NoCo Hackers Test #2",
+      "calendarId": "b34ubp9bjoqiudg0ekpseaqg88@group.calendar.google.com",
+      "color": "#77777",
+      "website": "",
+      "visible": false,
+      "eventFilter": {
+        "includeKeywords": [],
+        "excludeKeywords": ["cancelled", "canceled"]
+      }
+    }
+  ]
+}

@@ -501,6 +501,36 @@ main {
   outline-offset: 2px;
 }
 
+/* Show Past Events button */
+.show-past-events-btn {
+  position: relative;
+  font: inherit;
+  font-weight: bold;
+  background: var(--accent);
+  color: var(--background);
+  padding: 12px 24px;
+  border: 4px solid var(--accent);
+  border-radius: var(--radius);
+  transition: background 0.15s linear, color 0.15s linear;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  display: block;
+  width: 100%;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.show-past-events-btn:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+.show-past-events-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Content wrapper for about page */
 .content-wrapper {
   max-width: 800px;

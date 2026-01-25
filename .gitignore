@@ -1,0 +1,22 @@
+# Generated events file (created by sync binary)
+events-materialized.json
+.events-materialized-*.json.tmp
+
+# Go build artifacts
+sync/sync
+sync/*.exe
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
