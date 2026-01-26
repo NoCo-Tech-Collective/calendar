@@ -1,6 +1,7 @@
-name: Update data
+name: update-gcal-data
 
 on:
+  workflow_dispatch: 
   schedule:
     - cron: '*/5 * * * *'
     
