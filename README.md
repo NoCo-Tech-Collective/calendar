@@ -1,45 +1,44 @@
 # NoCo Tech Calendar
 
 As the Northern Colorado Tech community continues to grow, we've found a need for a unified calendar. Most people in the tech industry wear many hats, so a single group may not cover all the interests of an individual. "We" (including you, the reader) serve to provide a single point of reference for all of the tech groups in Colorado north of the Denver metro (we'll call this latitudes north of boulder county for now). 
-## Contributing
 
-To contribute events or improvements:
+## Adding a New Community Group
 
-1. Fork the repository
-2. Make your changes
-3. Submit a pull request
+There are three ways to get your events on the calendar:
 
-For event submissions, please follow the JSON format examples below and ensure all required fields are included.
+1. **Submit the [Google Form](https://docs.google.com/forms/d/1p92GESkIgH2IVu4Pezj27llon-_bzBhjptVEFG7hc-g/viewform?edit_requested=true)** This is easiest option, we'll add your events for you. Since the maintainers have full time jobs, families, and hobbies this could take a few days.
+2. **Add a Google Calendar source** — add an entry to `data/calendar-sources.json` for automated syncing from a public Google Calendar. See [Google Calendar Integration](#google-calendar-integration) below.
+3. **Add events directly** — add recurring or static event entries to `data/events.json`. See [Event Configuration](#event-configuration) below.
 
-## Support
+For options 2 and 3, submit a pull request with your changes and update `about.html` with the following:
+   - Group name (with website link if available)
+   - Brief description of the group
+   - Meeting schedule information
 
-For questions, bug reporting or help creating events, please open an issue or email brandon@cyb3r.sh.
+Example addition to `about.html`:
+```html
+<li>
+  <strong><a href="https://example.com">Your Group Name</a></strong> -
+  Brief description of your group. Meets [frequency] to [purpose].
+</li>
+```
 
-## Features
+## Date Range
 
-- **Flexible Event Scheduling**
-  - Weekly events with day-of-week support (numeric or named days)
-  - Monthly events with multiple patterns (specific days, "third Thursday", etc.)
-  - Daily recurring events
-  - One-time static events
+The calendar displays events within a **24-month window**: 12 months in the past and 12 months in the future, with both ranges rounded to include complete months.
 
-- **Event Management**
-  - Override specific occurrences of recurring events
-  - Cancel individual instances
-  - Modify time, location, or description for specific dates
-  - Color-coded events
+**How it works:**
+- If today is January 24, 2026, the calendar will show events from **January 1, 2025** through **January 31, 2027**
+- Navigation buttons are automatically disabled when you reach the earliest or latest viewable month
+- The event list view shows all events within this 24-month window, not just upcoming events. However, past events are hidden by default.
+- This limitation optimizes performance and ensures the calendar focuses on relevant events
 
-- **User Experience**
-  - Responsive design that works on mobile and desktop
-  - Light and dark mode with automatic detection and manual toggle
-  - Keyboard navigation (arrow keys for months, ESC to close modals)
-  - Accessible (WCAG compliant with ARIA labels and semantic HTML)
-  - Fast loading with no external dependencies
-  - Date range limited to 12 months in the past and 12 months in the future (rounded to full months) to optimize performance and relevance
+**Note:** Historical events older than 12 months and future events more than 12 months away will not be displayed, even if they are defined in `data/events.json`.
 
-## Quick Start
 
-**Important**: Due to browser CORS security policies, you need to run a local web server to load `events.json`. Opening `index.html` directly from disk (`file://`) will fail to load events.
+## Developer Quick Start
+
+**Important**: Due to browser CORS policies, you need to run a local web server to load `data/events.json`. Opening `index.html` directly from disk (`file://`) will fail to load events.
 
 ### Running Locally
 
@@ -62,43 +61,17 @@ For questions, bug reporting or help creating events, please open an issue or em
    ```
 
 3. Open your browser to `http://localhost:8000`
-4. Edit `events.json` to add your own events and refresh the page
 
-## Date Range Limitation
+### Adding Events
+For one-off or recurring events not backed by a google calendar, edit `data/events.json`. Alternatively google calendar sync can be configured by editing `data/calendar-sources.json`. 
 
-The calendar displays events within a **24-month window**: 12 months in the past and 12 months in the future, with both ranges rounded to include complete months.
+In order to support both statically configured events and google calendar events, we combine `events.json` with google calendar events to create `events-materialized.json`. When this file exists, we serve it instead of `events.json`. To test the addition of a static event, it is probably ok to delete the materialized json and just ensure your new static event looks good. Full testing requires running the go binary to generate/update `events-materialized.json`. 
 
-**How it works:**
-- If today is January 24, 2026, the calendar will show events from **January 1, 2025** through **January 31, 2027**
-- Navigation buttons are automatically disabled when you reach the earliest or latest viewable month
-- The event list view shows all events within this 24-month window, not just upcoming events
-- This limitation optimizes performance and ensures the calendar focuses on relevant events
-
-**Note:** Historical events older than 12 months and future events more than 12 months away will not be displayed, even if they are defined in `events.json`.
-
-## Adding a New Community Group
-
-To add a new tech community group to the calendar using `events.json` (as opposed to via a public google calendar):
-
-1. **Add events to `events.json`** - Include all event details following the format examples below
-2. **Update `about.html`** - Add your group to the "Community Groups" section with:
-   - Group name (with website link if available)
-   - Brief description of the group
-   - Meeting schedule information
-
-Example addition to `about.html`:
-```html
-<li>
-  <strong><a href="https://example.com">Your Group Name</a></strong> -
-  Brief description of your group. Meets [frequency] to [purpose].
-</li>
-```
-
-## Google Calendar Integration
+### Google Calendar Integration
 
 The calendar can automatically sync events from public Google Calendars. This is useful for pulling in events from existing community calendars without manual data entry.
 
-### Setup
+#### Setup
 
 1. **Get a Google Calendar API Key**
    - Go to the [Google Cloud Console](https://console.cloud.google.com/)
@@ -109,7 +82,7 @@ The calendar can automatically sync events from public Google Calendars. This is
 
 2. **Make your Google Calendar public** (or get access to a public calendar ID)
 
-3. **Add calendar sources** to `calendar-sources.json` (alternatively email brandon@cyb3r.sh for help):
+3. **Add calendar sources** to `data/calendar-sources.json` (alternatively email brandon@cyb3r.sh for help):
 
 ```json
 {
@@ -120,6 +93,7 @@ The calendar can automatically sync events from public Google Calendars. This is
       "calendarId": "your-calendar-id@group.calendar.google.com",
       "color": "#df7020",
       "website": "https://example.com",
+      "visible": true,
       "eventFilter": {
         "includeKeywords": [],
         "excludeKeywords": ["cancelled", "canceled"]
@@ -138,11 +112,7 @@ The calendar can automatically sync events from public Google Calendars. This is
 - **visible**: (Optional) Set to `false` to hide events by default. Hidden events can be viewed with `?showHidden=true` query parameter. Defaults to `true` if not specified. Useful for testing events before making them public.
 - **eventFilter**: Keywords to include or exclude events
 
-### Sync Method
-
-Events from public google calendars are synced every 5 minutes and then added to a materilized JSON file that is used to build the calendar on the client side. This means if you modify your google calendar, it should take at most 5 minutes to sync to nocotech.org. If it takes longer than this, open a github issue or email `brandon@cyb3r.sh`
-
-#### Manual Sync (For developers)
+#### Manual Sync
 
 **Run the sync binary** to fetch events and create `events-materialized.json`:
 
@@ -158,38 +128,29 @@ go run main.go
 The sync tool will:
 - Fetch events from all configured Google Calendars (within the 24-month window)
 - Filter events based on your criteria
-- Combine them with manual events from `events.json`
-- Generate `events-materialized.json`
+- Combine them with manual events from `data/events.json`
+- Generate `data/events-materialized.json`
 
-The calendar automatically uses `events-materialized.json` if it exists, otherwise falls back to `events.json`.
+The calendar automatically uses `data/events-materialized.json` if it exists, otherwise falls back to `data/events.json`.
 
-### Event Filtering
+#### Event Filtering
 
 - **includeKeywords**: Only include events containing these keywords (case-insensitive)
 - **excludeKeywords**: Exclude events containing these keywords (case-insensitive)
 - If `includeKeywords` is empty, all events are included (unless excluded)
 
-### Finding Your Calendar ID
+#### Finding Your Calendar ID
 
 1. Go to your Google Calendar settings
 2. Select the calendar you want to share
 3. Scroll to "Integrate calendar"
 4. Copy the "Calendar ID" (usually ends with `@group.calendar.google.com`)
 
-### Automation
+### Event Configuration
 
-Consider setting up a cron job or GitHub Action to run the sync periodically:
+Events are defined in `data/events.json`. Here are examples of different event types:
 
-```bash
-# Run sync every day at 2am
-0 2 * * * cd /path/to/calendar/sync && go run main.go
-```
-
-## Event Configuration
-
-Events are defined in `events.json`. Here are examples of different event types:
-
-### Weekly Recurring Event
+#### Weekly Recurring Event
 
 ```json
 {
@@ -211,7 +172,7 @@ Events are defined in `events.json`. Here are examples of different event types:
 }
 ```
 
-### Monthly Recurring Event (Ordinal Day)
+#### Monthly Recurring Event (Ordinal Day)
 
 ```json
 {
@@ -233,7 +194,7 @@ Events are defined in `events.json`. Here are examples of different event types:
 }
 ```
 
-### Monthly Recurring Event (Specific Days)
+#### Monthly Recurring Event (Specific Days)
 
 ```json
 {
@@ -255,7 +216,7 @@ Events are defined in `events.json`. Here are examples of different event types:
 }
 ```
 
-### Static (One-time) Event
+#### Static (One-time) Event
 
 ```json
 {
@@ -275,7 +236,7 @@ Events are defined in `events.json`. Here are examples of different event types:
 
 **Note:** The `website` field is optional. If omitted, no website link will be displayed.
 
-### Event Overrides
+#### Event Overrides
 
 Cancel or modify specific occurrences:
 
@@ -298,15 +259,15 @@ Cancel or modify specific occurrences:
 }
 ```
 
-## Recurrence Options
+### Recurrence Options
 
-### Weekly Events
+#### Weekly Events
 
 - **daysOfWeek**: Array of days (numbers 0-6 or names)
   - Numbers: `0` = Sunday, `1` = Monday, ..., `6` = Saturday
   - Names: `"monday"`, `"tuesday"`, etc. (full or abbreviated like `"mon"`, `"tue"`)
 
-### Monthly Events
+#### Monthly Events
 
 Three options:
 
@@ -314,33 +275,6 @@ Three options:
 2. **ordinalDay**: String like `"third thursday"`, `"last friday"`, `"first monday"`
    - Ordinals: `first`, `second`, `third`, `fourth`, `fifth`, `last`
    - Days: Full or abbreviated day names
-
-## File Structure
-
-```
-nocotech/
-├── index.html           # Main HTML page
-├── styles.css          # Styles for layout and themes
-├── calendar.js         # Calendar rendering and event logic
-├── theme.js            # Dark/light mode toggle
-├── events.json         # Event data (edit this!)
-├── events-example.json # Example event configurations
-├── light.css           # Reference light theme
-├── dark.css            # Reference dark theme
-├── CLAUDE.md           # Developer guidance
-└── README.md           # This file
-```
-
-## Customization
-
-### Styling
-
-Edit `styles.css` to customize colors, fonts, and layout. The calendar uses CSS custom properties for theming:
-
-- `--bg-color`: Background color
-- `--text-color`: Text color
-- `--accent-color`: Accent/highlight color
-- etc.
 
 ### Event Colors
 
