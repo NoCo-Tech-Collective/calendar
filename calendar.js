@@ -54,11 +54,11 @@
   async function loadEvents() {
     try {
       // Try to load events-materialized.json first (includes Google Calendar events)
-      let response = await fetch('events-materialized.json');
+      let response = await fetch('data/events-materialized.json');
 
       // If materialized file doesn't exist, fall back to events.json
       if (!response.ok) {
-        response = await fetch('events.json');
+        response = await fetch('data/events.json');
       }
 
       eventsData = await response.json();

@@ -18,11 +18,11 @@ This is a client-side web application built with vanilla HTML5, CSS, and JavaScr
 - **styles.css** - Combined styles for layout and theming (derived from light.css and dark.css)
 - **calendar.js** - Calendar rendering engine with event management
 - **theme.js** - Light/dark mode toggle functionality
-- **events.json** - Event data configuration file
+- **data/events.json** - Event data configuration file
 
 ### Event System
 
-Events are defined in `events.json` with support for:
+Events are defined in `data/events.json` with support for:
 
 **Recurring Events:**
 - **Weekly**: Use `daysOfWeek` with day numbers (0-6) or day names (`"monday"`, `"tue"`, etc.)

@@ -13,9 +13,9 @@ import (
 
 func main() {
 	// Configuration paths
-	configPath := "../calendar-sources.json"
-	eventsJSONPath := "../events.json"
-	outputPath := "../events-materialized.json"
+	configPath := "../data/calendar-sources.json"
+	eventsJSONPath := "../data/events.json"
+	outputPath := "../data/events-materialized.json"
 
 	// Allow overriding paths via environment variables
 	if p := os.Getenv("CALENDAR_SOURCES"); p != "" {
