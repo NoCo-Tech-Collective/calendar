@@ -258,6 +258,21 @@
       "color": "#3498db"
     },
     {
+      "id": "NoCo Hackers Test-1ooo512sutff6nm4tnd4bvondd_20270218",
+      "title": "Test Repeating Event",
+      "description": "",
+      "type": "static",
+      "startDate": "2027-02-18",
+      "endDate": "2027-02-19",
+      "startTime": "00:00",
+      "endTime": "00:00",
+      "location": "Southern Ocean",
+      "website": "https://nocohackers.com",
+      "gcalLink": "https://www.google.com/calendar/event?eid=MW9vbzUxMnN1dGZmNm5tNHRuZDRidm9uZGRfMjAyNzAyMTggYTEwMjg3MjhjMjQ5MDA3MTc0YjNkZDI2NDIyOGY2MGYyN2QyY2YwYzgzM2Q0MmFjMTU1ODVkOTRiYWZhNDFhNUBn",
+      "visible": false,
+      "color": "#3498db"
+    },
+    {
       "id": "NoCo Hackers Test #2-0ucuem02rmvotv93dladn08ptd",
       "title": "test event 1",
       "description": "",
